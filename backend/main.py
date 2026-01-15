@@ -9,22 +9,16 @@ load_dotenv()
 
 app = FastAPI()
 
-
 @app.post("/ingest-repo")
 def ingest_repo(req: RepoRequest):
-    print("INGESTING REPO:", req.repo_url)
-
     try:
-        #Fetch metadata
         metadata = fetch_repo_metadata(req.repo_url)
-
-        #Shallow clone + cleanup
-        file_count = shallow_clone_repo(req.repo_url)
+        chunk_count = shallow_clone_repo(req.repo_url)
 
         return {
             "message": "Repo ingested successfully",
             "metadata": metadata,
-            "file_count": file_count
+            "chunks_stored": chunk_count
         }
 
     except Exception as e:
@@ -32,3 +26,22 @@ def ingest_repo(req: RepoRequest):
             "error": "Repo ingestion failed",
             "details": str(e)
         }
+from qa.qa_engine import answer_question
+from pydantic import BaseModel
+
+class QuestionRequest(BaseModel):
+    question: str
+    repo_url: str
+
+
+@app.post("/ask")
+def ask_question(req: QuestionRequest):
+    try:
+        answer = answer_question(req.question, req.repo_url)
+
+        return {
+            "answer": answer
+        }
+
+    except Exception as e:
+        return {"error": str(e)}

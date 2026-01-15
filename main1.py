@@ -1,72 +1,34 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from dotenv import load_dotenv
+"""import requests
 import os
-import subprocess
-import uuid
-import shutil
-
-# Load environment variables from .env
-load_dotenv()
-
-app = FastAPI()
-
-# Request Model 
-class RepoRequest(BaseModel):
-    repo_url: str
 
 
-# Ingest Repo Endpoint 
-@app.post("/ingest-repo")
-def ingest_repo(req: RepoRequest):
-    print("INGESTING REPO:", req.repo_url)
+def fetch_repo_metadata(repo_url: str) -> dict:
+    
+    Fetch basic GitHub repository metadata using GitHub API.
+    
 
-    # Create a unique temp directory
-    repo_id = str(uuid.uuid4())
-    base_path = f"/tmp/gitsage_repos/{repo_id}"
+    token = os.getenv("GITHUB_TOKEN")
 
-    try:
-        # Shallow clone the repo
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                "--single-branch",
-                req.repo_url,
-                base_path
-            ],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+    headers = {
+        "Authorization": f"token {token}"
+    }
 
-        print("CLONED INTO:", base_path)
+    api_url = repo_url.replace(
+        "https://github.com/",
+        "https://api.github.com/repos/"
+    )
 
-        # Walk files to confirm clone worked
-        file_count = 0
-        for root, dirs, files in os.walk(base_path):
-            # ignore .git directory
-            if ".git" in dirs:
-                dirs.remove(".git")
-            file_count += len(files)
+    response = requests.get(api_url, headers=headers)
 
-        print("TOTAL FILES:", file_count)
+    if response.status_code != 200:
+        raise Exception("Failed to fetch repository metadata")
 
-        return {
-            "message": "Repo cloned successfully",
-            "file_count": file_count
-        }
+    data = response.json()
 
-    except subprocess.CalledProcessError as e:
-        return {
-            "error": "Git clone failed",
-            "details": e.stderr.decode()
-        }
-
-    finally:
-        # Cleanup: delete cloned repo
-        if os.path.exists(base_path):
-            shutil.rmtree(base_path)
-            print("DELETED:", base_path)
+    return {
+        "name": data.get("full_name"),
+        "stars": data.get("stargazers_count"),
+        "forks": data.get("forks_count"),
+        "language": data.get("language"),
+        "description": data.get("description")
+    }"""

@@ -9,6 +9,8 @@ def fetch_repo_metadata(repo_url: str) -> dict:
 
     token = os.getenv("GITHUB_TOKEN")
 
+    print("DEBUG → GITHUB_TOKEN:", token)
+
     headers = {
         "Authorization": f"token {token}"
     }
@@ -18,7 +20,12 @@ def fetch_repo_metadata(repo_url: str) -> dict:
         "https://api.github.com/repos/"
     )
 
+    print("DEBUG → API URL:", api_url)
+
     response = requests.get(api_url, headers=headers)
+
+    print("DEBUG → STATUS:", response.status_code)
+    print("DEBUG → RESPONSE:", response.text)
 
     if response.status_code != 200:
         raise Exception("Failed to fetch repository metadata")
