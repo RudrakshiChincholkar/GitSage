@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftRight } from "lucide-react";
 
-const BACKEND_URL = "http://127.0.0.1:8000";
-
 export default function GitHubAnalyser() {
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +18,6 @@ const [qaList, setQaList] = useState([]);
   if (!repoUrl) {
     alert("Please enter a GitHub repository URL");
     return;
-    
   }
 
   // Extract owner and repo from URL
