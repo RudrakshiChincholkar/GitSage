@@ -23,24 +23,10 @@ def repo_exists_in_db(repo_url: str) -> bool:
 
 
 def compare_repositories(question: str, repo_urls: List[str]):
-    """
-    Compare two or more repositories based on a question.
-    
-    Args:
-        question: The comparison question/query
-        repo_urls: List of repository URLs to compare (length >= 2)
-    
-    Returns:
-        Comparison answer string from the LLM
-    
-    Raises:
-        ValueError: If less than 2 repos provided or if any repo not found in database
-    """
     if len(repo_urls) < 2:
         raise ValueError("At least 2 repository URLs are required for comparison")
     
-    # Check if all repositories exist in the database
-    missing_repos = []
+    '''missing_repos = []
     for repo_url in repo_urls:
         if not repo_exists_in_db(repo_url):
             missing_repos.append(repo_url)
@@ -56,7 +42,7 @@ def compare_repositories(question: str, repo_urls: List[str]):
             raise ValueError(
                 f"Repositories not found in database: {repos_list}. "
                 f"Please ingest them first using /ingest-repo endpoint."
-            )
+            )'''
     
     feature_queries = {
         "purpose": "what is the purpose of this repository?",
