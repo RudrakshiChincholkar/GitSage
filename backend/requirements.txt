@@ -1,0 +1,25 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+
+# GitHub + Repo handling
+gitpython
+
+# Embeddings
+sentence-transformers
+transformers
+torch
+
+# Vector DB
+chromadb
+
+# LLM (Groq)
+groq
+
+# Text chunking
+langchain-text-splitters
+
+# Utilities
+tqdm
+numpy
