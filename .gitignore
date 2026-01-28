@@ -14,3 +14,13 @@ node_modules/
 
 # OS
 .DS_Store
+# Secrets
+.env
+backend/.env
+
+# Python
+venv/
+__pycache__/
+
+# Node
+node_modules/
