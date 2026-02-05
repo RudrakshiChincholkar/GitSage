@@ -1,4 +1,3 @@
-from vectorstore.chroma_client import collection
 from llm.groq_client import generate_answer
 from ingestion.repo_fetcher import normalize_repo_url
 from ingestion.repo_summary import get_repo_summary

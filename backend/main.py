@@ -1,13 +1,15 @@
+import logging
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ingestion.models import RepoRequest
 from repo_ingestion.unified_pipeline import ingest_repository, get_retriever
 from qa.qa_engine import answer_question
-from docs.doc_generator import generate_documentation, format_documentation_markdown
-from llm.groq_client import generate_answer
-from ingestion.repo_summary import get_repo_summary
+from docs.doc_generator import generate_documentation
+
+
+logger = logging.getLogger("gitsage.api")
 
 # SINGLE APP INSTANCE
 app = FastAPI()
@@ -46,6 +48,7 @@ async def ingest(request: IngestRequest):
         result = ingest_repository(request.repo_url)
         return result
     except Exception as e:
+        logger.exception("Error in /ingest endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -57,10 +60,10 @@ async def ask(request: QuestionRequest):
 
         # Log answer summary for debugging
         try:
-            print(f"[API:/ask] answer length: {len(answer)}")
-            print("[API:/ask] answer (first 300 chars):", answer[:300])
+            logger.info("[/ask] answer length: %s", len(answer))
+            logger.debug("[/ask] answer (first 300 chars): %s", answer[:300])
         except Exception:
-            print("[API:/ask] answer generated (non-string or empty)")
+            logger.warning("[/ask] answer generated (non-string or empty)")
 
         return {"answer": answer}
     except Exception as e:
@@ -71,18 +74,16 @@ async def generate_docs(request: DocumentationRequest):
     try:
         # Use new retriever
         retriever = get_retriever()
-        
+
         # Generate documentation (doc_generator already supports this)
         documentation = generate_documentation(request.repo_url, retriever)
-        
+
         return {
             "status": "success",
             "sections": documentation
         }
     except Exception as e:
-        import traceback
-        print(f"\n❌ Error in /generate-docs endpoint:")
-        traceback.print_exc()
+        logger.exception("Error in /generate-docs endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/debug/chroma-count")

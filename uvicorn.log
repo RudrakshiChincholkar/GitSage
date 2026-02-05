@@ -162,3 +162,7 @@ Languages observed:
 - javascript
 - python
 INFO:     127.0.0.1:57744 - "POST /ask HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18924]
