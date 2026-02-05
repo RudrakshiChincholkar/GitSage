@@ -1,9 +1,11 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from embeddings.embedder_manager import initialize_embedders
 from repo_ingestion.unified_pipeline import ingest_repository, get_retriever
 from qa.qa_engine import answer_question
 from docs.doc_generator import generate_documentation
@@ -11,29 +13,48 @@ from docs.doc_generator import generate_documentation
 
 logger = logging.getLogger("gitsage.api")
 
-# SINGLE APP INSTANCE
-app = FastAPI()
 
-# CORS MUST BE ATTACHED TO THIS APP
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    Pre-loads embedding models on startup to avoid first-request latency.
+    """
+    print(" Starting GitSage API...")
+    print("Pre-loading embedding models...")
+    initialize_embedders()
+    print(" Models loaded and ready!")
+    yield
+    print("Shutting down GitSage API...")
+
+
+# Create app with lifespan
+app = FastAPI(lifespan=lifespan)
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # dev mode
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],        # includes OPTIONS
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --------- Models ---------
 
 class IngestRequest(BaseModel):
     repo_url: str
 
+
 class QuestionRequest(BaseModel):
     repo_url: str
     question: str
 
+
 class DocumentationRequest(BaseModel):
     repo_url: str
+
 
 # --------- Routes ---------
 
@@ -42,42 +63,31 @@ async def health():
     """Health check endpoint"""
     return {"status": "ok", "message": "GitSage API is running"}
 
+
 @app.post("/ingest")
-async def ingest(request: IngestRequest):
+async def ingest(request: IngestRequest):  # ← Added 'async'
     try:
-        result = ingest_repository(request.repo_url)
+        result = await ingest_repository(request.repo_url)  # ← Added 'await'
         return result
     except Exception as e:
         logger.exception("Error in /ingest endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/ask")
 async def ask(request: QuestionRequest):
     try:
-        # Delegate to qa_engine.answer_question which builds a mode-aware prompt
         answer = answer_question(request.repo_url, request.question)
-
-        # Log answer summary for debugging
-        try:
-            logger.info("[/ask] answer length: %s", len(answer))
-            logger.debug("[/ask] answer (first 300 chars): %s", answer[:300])
-        except Exception:
-            logger.warning("[/ask] answer generated (non-string or empty)")
-
+        logger.info("[/ask] answer length: %s", len(answer))
         return {"answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/generate-docs")
 async def generate_docs(request: DocumentationRequest):
     try:
-        # Use new retriever
         retriever = get_retriever()
-
-        # Generate documentation (doc_generator already supports this)
         documentation = generate_documentation(request.repo_url, retriever)
-
         return {
             "status": "success",
             "sections": documentation
@@ -85,6 +95,7 @@ async def generate_docs(request: DocumentationRequest):
     except Exception as e:
         logger.exception("Error in /generate-docs endpoint")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/debug/chroma-count")
 async def debug_chroma_count():
@@ -95,7 +106,6 @@ async def debug_chroma_count():
     code_count = store.code_collection.count()
     text_count = store.text_collection.count()
     
-    # Get a sample to check repo_url metadata
     code_sample = store.code_collection.get(limit=2, include=["metadatas"])
     text_sample = store.text_collection.get(limit=2, include=["metadatas"])
     

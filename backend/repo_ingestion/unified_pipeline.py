@@ -3,7 +3,7 @@ Unified ingestion pipeline that uses the improved GitHub-based downloader
 while maintaining compatibility with existing Q&A and Docs features.
 """
 
-from repo_ingestion.step1_pipeline import run_step1
+from repo_ingestion.step1_pipeline import run_step1, run_step1_async  # ← ADD run_step1_async import
 from repo_ingestion.file_processor import run_step2_validation
 from embeddings.embedding_pipeline import EmbeddingPipeline
 from vectorstore.chroma_store import ChromaStore
@@ -34,9 +34,9 @@ def _get_repo_version(repo_url: str) -> str | None:
     )
 
 
-def ingest_repository(repo_url: str) -> dict:
+async def ingest_repository(repo_url: str) -> dict:
     """
-    Complete repository ingestion pipeline.
+    Complete repository ingestion pipeline (async version).
 
     Steps:
     1) Use GitHub APIs to discover and download only relevant files.
@@ -69,8 +69,8 @@ def ingest_repository(repo_url: str) -> dict:
         }
 
     print(f"[1/3] Fetching and downloading repository files...")
-    # Step 1: Fetch from GitHub API, filter, download
-    downloaded_files = run_step1(normalized_repo)
+    # Step 1: Fetch from GitHub API, filter, download (async version)
+    downloaded_files = await run_step1_async(normalized_repo)
     print(f"✓ Downloaded {len(downloaded_files)} files")
 
     print(f"[2/3] Cleaning, validating, and chunking...")
