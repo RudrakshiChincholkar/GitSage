@@ -1,0 +1,164 @@
+nohup: ignoring input
+INFO:     Started server process [18924]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+[chroma_client] Using persist_directory=/home/rudrakshi/GitSage-ankita-3rd-feb/backend/vectorstore/chroma_db
+[ChromaStore] Using persist_directory=/home/rudrakshi/GitSage-ankita-3rd-feb/backend/vectorstore/chroma_db
+[ChromaStore] Reusing existing chromadb client from vectorstore.chroma_client
+[qa_engine.search_repo] calling retriever.retrieve with repo_url='https://github.com/RudrakshiChincholkar/expense-tracker' query='Which files define the main app logic?' top_k=12
+[RETRIEVER_NEW] code_results_raw count: 1, text_results_raw count: 1, repo_url=https://github.com/RudrakshiChincholkar/expense-tracker
+[qa_engine.search_repo] retriever returned 12 raw results
+  raw[1] metadata: {'language': 'python', 'type': 'code', 'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker', 'path': 'backend/app.py'}
+  raw[2] metadata: {'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker', 'language': 'javascript', 'type': 'code', 'path': 'frontend/script.js'}
+  raw[3] metadata: {'language': 'python', 'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker', 'path': 'backend/app.py', 'type': 'code'}
+  raw[4] metadata: {'type': 'code', 'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker', 'language': 'javascript', 'path': 'frontend/script.js'}
+  raw[5] metadata: {'type': 'code', 'language': 'python', 'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker', 'path': 'backend/app.py'}
+  raw[6] metadata: {'path': 'backend/app.py', 'language': 'python', 'type': 'code', 'repo_url': 'https://github.com/RudrakshiChincholkar/expense-tracker'}
+
+Question mode: INVENTORY
+Retrieved chunks:
+-----
+unknown
+def add_category():
+    data = request.json
+    name = data.get('name')
+    color = data.get('color', '#FF6B6B')
+    budget = data.get('budget', 0)
+
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+    query = """
+        INSERT INTO categories (user_id, name, co
+-----
+unknown
+const angle = (index / summary.category_spending.length) * 2 * Math.PI;
+        const x = Math.cos(angle) * orbitRadius;
+        const y = Math.sin(angle) * orbitRadius;
+
+        planet.style.transform = `translate(${x}px, ${y}px)`;
+
+        // Planet body
+        const planetBody = document.createE
+-----
+unknown
+def get_summary():
+    # Total salaries
+    salary_query = "SELECT COALESCE(SUM(amount), 0) as total FROM salaries WHERE user_id = %s"
+    salary_result = execute_query(salary_query, (DEFAULT_USER_ID,), fetch=True)
+    total_salary = float(salary_result[0]['total']) if salary_result else 0
+
+    # To
+-----
+unknown
+function renderGalaxy() {
+    const container = document.getElementById('galaxyContainer');
+
+    // Remove existing planets and orbits
+    const existingPlanets = container.querySelectorAll('.planet, .orbit');
+    existingPlanets.forEach(el => el.remove());
+
+    if (!summary.category_spending || sum
+-----
+unknown
+def add_salary():
+    data = request.json
+    amount = data.get('amount')
+
+    if not amount or float(amount) <= 0:
+        return jsonify({'error': 'Valid amount is required'}), 400
+
+    query = "INSERT INTO salaries (user_id, amount) VALUES (%s, %s)"
+    salary_id = execute_query(query, (DEFAULT_U
+-----
+unknown
+def get_expenses():
+    query = """
+        SELECT e.*, c.name as category_name, c.color as category_color
+        FROM expenses e
+        JOIN categories c ON e.category_id = c.id
+        WHERE e.user_id = %s
+        ORDER BY e.created_at DESC
+    """
+    expenses = execute_query(query, (DEFAULT_US
+-----
+unknown
+function updateSunGlow() {
+    const sunGlow = document.querySelector('.sun-glow');
+    const balance = summary.balance || 0;
+
+    // Scale glow based on balance
+    const scale = Math.min(1 + (balance / 10000), 2);
+    const opacity = Math.min(0.5 + (balance / 20000), 1);
+
+    sunGlow.style.width =
+-----
+unknown
+def execute_query(query, params=None, fetch=False):
+    """Execute a query and optionally fetch results"""
+    connection = get_db_connection()
+    if not connection:
+        return None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query, params or ())
+
+       
+-----
+unknown
+function populateCategoryDropdown() {
+    const select = document.getElementById('expenseCategory');
+
+    // Keep first two options (placeholder and "Create New")
+    while (select.options.length > 2) {
+        select.remove(2);
+    }
+
+    categories.forEach(category => {
+        const option = docu
+-----
+unknown
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 2rem;
+        background: ${type === 'success' ? 'rgba(78, 204, 163
+-----
+unknown
+def get_db_connection():
+    """Create and return a database connection"""
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='finance_galaxy',
+            user='root',
+            password='root123',  # Change this to your MySQL password
+      
+-----
+unknown
+def get_salaries():
+    query = "SELECT * FROM salaries WHERE user_id = %s ORDER BY created_at DESC"
+    salaries = execute_query(query, (DEFAULT_USER_ID,), fetch=True)
+    return jsonify(salaries or [])
+
+# Add new salary
+@app.route('/api/salaries', methods=['POST'])
+[API:/ask] answer length: 188
+[API:/ask] answer (first 300 chars): Inventory of explicit items found in repository:
+
+Code files:
+- backend/app.py
+- backend/database.py
+- frontend/script.js
+
+Types observed:
+- code
+
+Languages observed:
+- javascript
+- python
+INFO:     127.0.0.1:57744 - "POST /ask HTTP/1.1" 200 OK

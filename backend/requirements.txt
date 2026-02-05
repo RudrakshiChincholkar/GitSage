@@ -1,0 +1,34 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+
+# GitHub + Repo handling
+gitpython
+
+# Embeddings
+sentence-transformers
+transformers
+torch
+
+# Vector DB
+chromadb
+
+# LLM (Groq)
+groq
+
+# Text chunking
+langchain-text-splitters
+
+# Utilities
+tqdm
+numpy
+
+# Core FastAPI (you probably have these)
+fastapi
+uvicorn
+python-dotenv
+
+# Better pipeline dependencies
+pydantic              # Data validation
+
