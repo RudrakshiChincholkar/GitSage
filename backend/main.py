@@ -20,12 +20,12 @@ async def lifespan(app: FastAPI):
     Application lifespan manager.
     Pre-loads embedding models on startup to avoid first-request latency.
     """
-    print(" Starting GitSage API...")
-    print("Pre-loading embedding models...")
+    print("🚀 Starting GitSage API...")
+    print("📦 Pre-loading embedding models...")
     initialize_embedders()
-    print(" Models loaded and ready!")
+    print("✅ Models loaded and ready!")
     yield
-    print("Shutting down GitSage API...")
+    print("👋 Shutting down GitSage API...")
 
 
 # Create app with lifespan
@@ -65,13 +65,14 @@ async def health():
 
 
 @app.post("/ingest")
-async def ingest(request: IngestRequest):  # ← Added 'async'
+async def ingest(request: IngestRequest):
     try:
-        result = await ingest_repository(request.repo_url)  # ← Added 'await'
+        result = await ingest_repository(request.repo_url)
         return result
     except Exception as e:
         logger.exception("Error in /ingest endpoint")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/ask")
 async def ask(request: QuestionRequest):
@@ -80,6 +81,7 @@ async def ask(request: QuestionRequest):
         logger.info("[/ask] answer length: %s", len(answer))
         return {"answer": answer}
     except Exception as e:
+        logger.exception("Error in /ask endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
 

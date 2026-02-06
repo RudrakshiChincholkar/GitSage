@@ -1,6 +1,10 @@
 """
 Global singleton manager for embedding models.
 Ensures models are loaded exactly once and reused across all requests.
+
+This manager supports both:
+1. Dual-model approach (CodeT5 + MiniLM) - current implementation
+2. Single-model approach (future optimization)
 """
 from typing import Optional
 from embeddings.code_embedder_new import CodeEmbedder
@@ -58,6 +62,14 @@ def get_code_embedder() -> CodeEmbedder:
 
 def get_text_embedder() -> SentenceEmbedder:
     """Get the shared text embedder instance."""
+    return _embedder_manager.text_embedder
+
+
+def get_embedder():
+    """
+    For compatibility with single-model approach.
+    Returns the text embedder (can be used for both code and text).
+    """
     return _embedder_manager.text_embedder
 
 

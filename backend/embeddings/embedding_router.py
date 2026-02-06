@@ -12,6 +12,10 @@ class EmbeddingRouter:
     def _normalize_text(value: Any) -> str:
         """
         Ensure every chunk's 'text' field is a single string.
+
+        Some chunkers may produce lists of lines; SentenceTransformer and
+        Chroma both expect plain strings, so we join lists with newlines and
+        coerce everything else to str.
         """
         if isinstance(value, list):
             return "\n".join(str(v) for v in value)
@@ -23,7 +27,7 @@ class EmbeddingRouter:
 
         # Normalize text and separate code vs text chunks
         for c in chunks:
-            c = dict(c)
+            c = dict(c)  # shallow copy in case callers reuse dicts
             c["text"] = self._normalize_text(c.get("text", ""))
 
             if c.get("type") == "code":
@@ -33,12 +37,10 @@ class EmbeddingRouter:
 
         # Batch embed all chunks at once
         doc_vectors = (
-            self.text_embedder.embed([c["text"] for c in doc_chunks]) 
-            if doc_chunks else []
+            self.text_embedder.embed([c["text"] for c in doc_chunks]) if doc_chunks else []
         )
         code_vectors = (
-            self.code_embedder.embed([c["text"] for c in code_chunks]) 
-            if code_chunks else []
+            self.code_embedder.embed([c["text"] for c in code_chunks]) if code_chunks else []
         )
 
         embedded: List[dict] = []
