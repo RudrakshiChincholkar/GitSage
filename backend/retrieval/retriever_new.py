@@ -125,6 +125,10 @@ class Retriever:
 
         # 5️⃣ Merge results and sort by similarity
         combined = code_results + text_results
+        for r in combined:
+         if r["metadata"].get("type") == "repo_summary":
+           r["similarity"] += 1.0
+
         combined.sort(key=lambda x: x["similarity"], reverse=True)
         
         final_results = combined[:top_k]

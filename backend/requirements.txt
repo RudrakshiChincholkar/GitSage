@@ -32,3 +32,8 @@ python-dotenv
 # Better pipeline dependencies
 pydantic              # Data validation
 
+transformers<4.40
+tokenizers
+sentencepiece
+tiktoken
+aiohttp

@@ -52,6 +52,7 @@ class ChromaStore:
 
         ChromaStore._initialized = True
 
+    
     # ------------------------------------------------------------------
     # Embedding storage
     # ------------------------------------------------------------------
@@ -214,3 +215,4 @@ class ChromaStore:
             "code": self.inspect_code_embeddings(limit),
             "text": self.inspect_text_embeddings(limit),
         }
+    

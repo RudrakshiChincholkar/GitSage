@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { Github, Star, GitFork, Package, Code, Users, Calendar, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Github, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { compareRepos, CompareResponse } from "../api/gitsage";
 
-interface ComparisonData {
-  name: string;
-  description: string;
-  stars: number;
-  forks: number;
-  lastUpdated: string;
-  language: string;
-  license: string;
-  size: string;
-  dependencies: number;
-  features: {
-    name: string;
-    status: 'yes' | 'no' | 'partial';
-  }[];
+function Section({ title, items }: { title: string; items: string[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div>
+      <h4 className="font-medium mb-1">{title}</h4>
+      <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export function Compare() {
@@ -22,81 +22,25 @@ export function Compare() {
   const [repoUrl2, setRepoUrl2] = useState('');
   const [isComparing, setIsComparing] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [comparison, setComparison] = useState<CompareResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCompare = () => {
+  const handleCompare = async () => {
     if (!repoUrl1 || !repoUrl2) return;
-    
+
     setIsComparing(true);
-    setTimeout(() => {
-      setIsComparing(false);
+    setError(null);
+
+    try {
+      const data = await compareRepos(repoUrl1, repoUrl2);
+      setComparison(data);
       setShowComparison(true);
-    }, 1500);
+    } catch (err) {
+      setError("Failed to compare repositories");
+    } finally {
+      setIsComparing(false);
+    }
   };
-
-  // Mock comparison data
-  const comparisonData: [ComparisonData, ComparisonData] = [
-    {
-      name: 'Repository A',
-      description: 'A comprehensive web framework for building modern applications',
-      stars: 45200,
-      forks: 8300,
-      lastUpdated: '2 days ago',
-      language: 'TypeScript',
-      license: 'MIT',
-      size: '12.4 MB',
-      dependencies: 42,
-      features: [
-        { name: 'TypeScript Support', status: 'yes' },
-        { name: 'Server-Side Rendering', status: 'yes' },
-        { name: 'Hot Module Replacement', status: 'yes' },
-        { name: 'Built-in Testing', status: 'partial' },
-        { name: 'Mobile Support', status: 'yes' },
-        { name: 'GraphQL Integration', status: 'no' },
-      ],
-    },
-    {
-      name: 'Repository B',
-      description: 'Lightweight and fast web framework with minimal dependencies',
-      stars: 38900,
-      forks: 5600,
-      lastUpdated: '1 week ago',
-      language: 'JavaScript',
-      license: 'Apache 2.0',
-      size: '3.2 MB',
-      dependencies: 18,
-      features: [
-        { name: 'TypeScript Support', status: 'partial' },
-        { name: 'Server-Side Rendering', status: 'no' },
-        { name: 'Hot Module Replacement', status: 'yes' },
-        { name: 'Built-in Testing', status: 'yes' },
-        { name: 'Mobile Support', status: 'partial' },
-        { name: 'GraphQL Integration', status: 'yes' },
-      ],
-    },
-  ];
-
-  const StatIcon = ({ icon: Icon, label, value1, value2 }: { icon: any; label: string; value1: string | number; value2: string | number }) => (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2" style={{ color: 'var(--muted-foreground)' }}>
-        <Icon className="w-4 h-4" />
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div
-          className="p-3 rounded-lg text-center"
-          style={{ backgroundColor: 'var(--muted)' }}
-        >
-          <div className="font-semibold">{value1}</div>
-        </div>
-        <div
-          className="p-3 rounded-lg text-center"
-          style={{ backgroundColor: 'var(--muted)' }}
-        >
-          <div className="font-semibold">{value2}</div>
-        </div>
-      </div>
-    </div>
-  );
 
   const FeatureStatusIcon = ({ status }: { status: 'yes' | 'no' | 'partial' }) => {
     if (status === 'yes') {
@@ -205,114 +149,176 @@ export function Compare() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Repository Headers */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {comparisonData.map((repo, idx) => (
+            {error && (
+              <div
+                className="p-4 rounded-xl border"
+                style={{
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--destructive)',
+                }}
+              >
+                {error}
+              </div>
+            )}
+            
+            {comparison && (
+              <>
+                {/* Repository Headers */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Repo A */}
+                  <div
+                    className="p-6 rounded-xl border"
+                    style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2">
+                      {comparison.repo_a.name}
+                    </h3>
+                    <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
+                      {comparison.repo_a.description || "No description"}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>⭐ Stars: {comparison.repo_a.stars}</div>
+                      <div>🍴 Forks: {comparison.repo_a.forks}</div>
+                      <div>🧠 Language: {comparison.repo_a.language || "N/A"}</div>
+                      <div>📦 Dependencies: {comparison.repo_a.dependencies}</div>
+                      <div>📄 License: {comparison.repo_a.license || "N/A"}</div>
+                      <div>🕒 Updated: {comparison.repo_a.last_updated || "N/A"}</div>
+                    </div>
+                  </div>
+
+                  {/* Repo B */}
+                  <div
+                    className="p-6 rounded-xl border"
+                    style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2">
+                      {comparison.repo_b.name}
+                    </h3>
+                    <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
+                      {comparison.repo_b.description || "No description"}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>⭐ Stars: {comparison.repo_b.stars}</div>
+                      <div>🍴 Forks: {comparison.repo_b.forks}</div>
+                      <div>🧠 Language: {comparison.repo_b.language || "N/A"}</div>
+                      <div>📦 Dependencies: {comparison.repo_b.dependencies}</div>
+                      <div>📄 License: {comparison.repo_b.license || "N/A"}</div>
+                      <div>🕒 Updated: {comparison.repo_b.last_updated || "N/A"}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* High-Level Comparison */}
                 <div
-                  key={idx}
+                  className="p-6 rounded-xl border space-y-6"
+                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                >
+                  <h3 className="text-lg font-semibold">High-Level Comparison</h3>
+
+                  <Section
+                    title="📌 Overview"
+                    items={comparison.overall_comparison.overview || []}
+                  />
+
+                  <Section
+                    title="🏗 Architecture"
+                    items={comparison.overall_comparison.architecture || []}
+                  />
+
+                  <div>
+                    <h4 className="font-medium mb-2">💪 Strengths</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Section
+                        title="Repo A"
+                        items={comparison.overall_comparison.strengths?.repo_a || []}
+                      />
+                      <Section
+                        title="Repo B"
+                        items={comparison.overall_comparison.strengths?.repo_b || []}
+                      />
+                    </div>
+                  </div>
+
+                  <Section
+                    title="⚖ Trade-offs"
+                    items={comparison.overall_comparison.tradeoffs || []}
+                  />
+
+                  <div>
+                    <h4 className="font-medium mb-2">🎯 Ideal Use Cases</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Section
+                        title="Repo A"
+                        items={comparison.overall_comparison.ideal_use_cases?.repo_a || []}
+                      />
+                      <Section
+                        title="Repo B"
+                        items={comparison.overall_comparison.ideal_use_cases?.repo_b || []}
+                      />
+                    </div>
+                  </div>
+
+                  <Section
+                    title="🧠 Final Verdict"
+                    items={comparison.overall_comparison.verdict || []}
+                  />
+                </div>
+
+                {/* Feature Comparison */}
+                <div
                   className="p-6 rounded-xl border"
                   style={{
                     backgroundColor: 'var(--card)',
                     borderColor: 'var(--border)',
                   }}
                 >
-                  <h3 className="text-xl font-semibold mb-2">{repo.name}</h3>
-                  <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
-                    {repo.description}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4" />
-                      {repo.stars.toLocaleString()}
+                  <h3 className="text-lg font-semibold mb-6">Feature Comparison</h3>
+
+                  <div className="space-y-3">
+                    {Object.entries(comparison.feature_comparison).map(
+                      ([featureName, values]) => {
+                        const featureValues = values as { repo_a: "yes" | "no" | "partial"; repo_b: "yes" | "no" | "partial" };
+                        return (
+                          <div
+                            key={featureName}
+                            className="grid grid-cols-[1fr,auto,auto] gap-4 items-center py-3 border-b last:border-b-0"
+                            style={{ borderColor: 'var(--border)' }}
+                          >
+                            <div className="font-medium">{featureName}</div>
+
+                            <div className="flex justify-center">
+                              <FeatureStatusIcon status={featureValues.repo_a} />
+                            </div>
+
+                            <div className="flex justify-center">
+                              <FeatureStatusIcon status={featureValues.repo_b} />
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                  
+                  <div className="mt-6 pt-6 border-t flex items-center gap-6 text-sm" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--secondary)' }} />
+                      Supported
                     </div>
-                    <div className="flex items-center gap-1">
-                      <GitFork className="w-4 h-4" />
-                      {repo.forks.toLocaleString()}
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      Partial
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                      Not supported
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Statistics Comparison */}
-            <div
-              className="p-6 rounded-xl border"
-              style={{
-                backgroundColor: 'var(--card)',
-                borderColor: 'var(--border)',
-              }}
-            >
-              <h3 className="text-lg font-semibold mb-6">Repository Statistics</h3>
-              <div className="space-y-6">
-                <StatIcon
-                  icon={Code}
-                  label="Primary Language"
-                  value1={comparisonData[0].language}
-                  value2={comparisonData[1].language}
-                />
-                <StatIcon
-                  icon={Package}
-                  label="Dependencies"
-                  value1={comparisonData[0].dependencies}
-                  value2={comparisonData[1].dependencies}
-                />
-                <StatIcon
-                  icon={Calendar}
-                  label="Last Updated"
-                  value1={comparisonData[0].lastUpdated}
-                  value2={comparisonData[1].lastUpdated}
-                />
-                <StatIcon
-                  icon={Users}
-                  label="License"
-                  value1={comparisonData[0].license}
-                  value2={comparisonData[1].license}
-                />
-              </div>
-            </div>
-
-            {/* Features Comparison */}
-            <div
-              className="p-6 rounded-xl border"
-              style={{
-                backgroundColor: 'var(--card)',
-                borderColor: 'var(--border)',
-              }}
-            >
-              <h3 className="text-lg font-semibold mb-6">Feature Comparison</h3>
-              <div className="space-y-3">
-                {comparisonData[0].features.map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-[1fr,auto,auto] gap-4 items-center py-3 border-b last:border-b-0"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    <div className="font-medium">{feature.name}</div>
-                    <div className="flex justify-center">
-                      <FeatureStatusIcon status={feature.status} />
-                    </div>
-                    <div className="flex justify-center">
-                      <FeatureStatusIcon status={comparisonData[1].features[idx].status} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 pt-6 border-t flex items-center gap-6 text-sm" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--secondary)' }} />
-                  Supported
-                </div>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  Partial
-                </div>
-                <div className="flex items-center gap-2">
-                  <XCircle className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                  Not supported
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
       </div>

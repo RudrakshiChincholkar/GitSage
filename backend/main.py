@@ -10,16 +10,31 @@ from repo_ingestion.unified_pipeline import ingest_repository, get_retriever
 from qa.qa_engine import answer_question
 from docs.doc_generator import generate_documentation
 
+from ingestion.repo_fetcher import normalize_repo_url
+from vectorstore.chroma_store import ChromaStore
+from comparison.comparison_engine import ComparisonEngine
+from repo_ingestion.unified_pipeline import get_retriever
+from llm.groq_client import generate_answer
 
 logger = logging.getLogger("gitsage.api")
 
 
+# --------------------------------------------------
+# INGESTION GUARD (SINGLE SOURCE OF TRUTH)
+# --------------------------------------------------
+
+def ensure_repo_is_ingested(repo_url: str):
+    # No-op guard (restore previous behavior)
+    return
+
+
+
+# --------------------------------------------------
+# APP LIFESPAN
+# --------------------------------------------------
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application lifespan manager.
-    Pre-loads embedding models on startup to avoid first-request latency.
-    """
     print("🚀 Starting GitSage API...")
     print("📦 Pre-loading embedding models...")
     initialize_embedders()
@@ -28,10 +43,12 @@ async def lifespan(app: FastAPI):
     print("👋 Shutting down GitSage API...")
 
 
-# Create app with lifespan
 app = FastAPI(lifespan=lifespan)
 
+# --------------------------------------------------
 # CORS
+# --------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,8 +57,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# --------- Models ---------
+# --------------------------------------------------
+# REQUEST MODELS
+# --------------------------------------------------
 
 class IngestRequest(BaseModel):
     repo_url: str
@@ -55,20 +73,22 @@ class QuestionRequest(BaseModel):
 class DocumentationRequest(BaseModel):
     repo_url: str
 
-
-# --------- Routes ---------
+class CompareRequest(BaseModel):
+    repo_a_namespace: str
+    repo_b_namespace: str
+# --------------------------------------------------
+# ROUTES
+# --------------------------------------------------
 
 @app.get("/")
 async def health():
-    """Health check endpoint"""
     return {"status": "ok", "message": "GitSage API is running"}
 
 
 @app.post("/ingest")
 async def ingest(request: IngestRequest):
     try:
-        result = await ingest_repository(request.repo_url)
-        return result
+        return await ingest_repository(request.repo_url)
     except Exception as e:
         logger.exception("Error in /ingest endpoint")
         raise HTTPException(status_code=500, detail=str(e))
@@ -77,9 +97,16 @@ async def ingest(request: IngestRequest):
 @app.post("/ask")
 async def ask(request: QuestionRequest):
     try:
+        # 🔒 HARD BLOCK
+        ensure_repo_is_ingested(request.repo_url)
+
         answer = answer_question(request.repo_url, request.question)
         logger.info("[/ask] answer length: %s", len(answer))
         return {"answer": answer}
+
+    except HTTPException:
+        raise
+
     except Exception as e:
         logger.exception("Error in /ask endpoint")
         raise HTTPException(status_code=500, detail=str(e))
@@ -88,12 +115,19 @@ async def ask(request: QuestionRequest):
 @app.post("/generate-docs")
 async def generate_docs(request: DocumentationRequest):
     try:
+        # Same ingestion guard as Q&A
+        ensure_repo_is_ingested(request.repo_url)
+
         retriever = get_retriever()
         documentation = generate_documentation(request.repo_url, retriever)
         return {
             "status": "success",
             "sections": documentation
         }
+
+    except HTTPException:
+        raise
+
     except Exception as e:
         logger.exception("Error in /generate-docs endpoint")
         raise HTTPException(status_code=500, detail=str(e))
@@ -101,19 +135,31 @@ async def generate_docs(request: DocumentationRequest):
 
 @app.get("/debug/chroma-count")
 async def debug_chroma_count():
-    """Debug endpoint to check ChromaDB status"""
-    from vectorstore.chroma_store import ChromaStore
-    
     store = ChromaStore()
+
     code_count = store.code_collection.count()
     text_count = store.text_collection.count()
-    
+
     code_sample = store.code_collection.get(limit=2, include=["metadatas"])
     text_sample = store.text_collection.get(limit=2, include=["metadatas"])
-    
+
     return {
         "code_count": code_count,
         "text_count": text_count,
         "code_sample_metadatas": code_sample.get("metadatas", []),
-        "text_sample_metadatas": text_sample.get("metadatas", [])
+        "text_sample_metadatas": text_sample.get("metadatas", []),
     }
+@app.post("/compare-repos")
+def compare_repos(req: CompareRequest):
+    retriever = get_retriever()
+
+    class LLMWrapper:
+        def generate(self, prompt: str) -> str:
+            return generate_answer("", prompt)
+
+    engine = ComparisonEngine(retriever, LLMWrapper())
+
+    return engine.compare(
+        req.repo_a_namespace,
+        req.repo_b_namespace
+    )

@@ -10,6 +10,7 @@ from vectorstore.chroma_store import ChromaStore
 from ingestion.repo_fetcher import normalize_repo_url
 from repo_ingestion.fetcher import get_repo_details, fetch_meta_repodata
 
+from repo_ingestion.repo_summary_new import extract_repo_summary, get_repo_summary
 
 def _get_repo_version(repo_url: str) -> str | None:
     """
@@ -58,7 +59,8 @@ async def ingest_repository(repo_url: str) -> dict:
     repo_version = _get_repo_version(normalized_repo)
 
     store = ChromaStore()
-    if store.is_repo_ingested(normalized_repo, repo_version):
+    #if store.is_repo_ingested(normalized_repo, repo_version):
+    if False:
         msg = f"Repository already ingested for version {repo_version}; skipping re-embedding."
         print(f"[INGEST] {msg}")
         return {
@@ -73,9 +75,22 @@ async def ingest_repository(repo_url: str) -> dict:
     downloaded_files = await run_step1_async(normalized_repo)
     print(f"✓ Downloaded {len(downloaded_files)} files")
 
+    extract_repo_summary(normalized_repo, downloaded_files)
+    summary_text = get_repo_summary(normalized_repo)
+
     print(f"[2/3] Cleaning, validating, and chunking...")
     # Step 2: Clean, validate, and chunk with language-specific logic
     chunks = run_step2_validation(downloaded_files)
+    if summary_text:
+      chunks.append({
+        "content": summary_text,
+        "language": "text",
+        "metadata": {
+            "repo_url": normalized_repo,
+            "path": "__REPO_SUMMARY__",
+            "type": "repo_summary"
+        }
+    })
     print(f"✓ Created {len(chunks)} chunks")
 
     print(f"[3/3] Embedding and storing in ChromaDB...")
