@@ -1,9 +1,13 @@
-## GitSage
+## GitSage: Code Confusion? We've Git You Covered
 
-GitSage provides two core capabilities on top of GitHub repositories:
+GitSage provides three core capabilities on top of GitHub repositories:
 
 - **Repository Q&A**: Ask natural-language questions about any GitHub repo and get answers grounded purely in the indexed source and docs.
+
 - **Repository Documentation Generator**: Generate structured, human-readable documentation (overview, architecture, setup, features, API reference) from a repo.
+
+- **Repository Comparison Engine**: Compare multiple GitHub repositories through side-by-side metadata evaluation and LLM-based architectural analysis to identify strengths, trade-offs, and generate a final verdict with a structured feature comparison.
+
 
 The backend is built with **FastAPI**, **ChromaDB**, and **Groq LLaMA**, and the frontend is a **React + Vite** SPA.
 
